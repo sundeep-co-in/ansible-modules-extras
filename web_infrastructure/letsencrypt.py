@@ -103,8 +103,10 @@ options:
     alias: ['cert']
   remaining_days:
     description:
-      - "The number of days the certificate must have left being valid before it
-         will be renewed."
+      - "The number of days the certificate must have left being valid.
+         If C(remaining_days < cert_days), then it will be renewed.
+         If the certificate is not renewed, module return values will not
+         include C(challenge_data)."         
     required: false
     default: 10
 '''
@@ -204,7 +206,7 @@ def get_cert_days(module,cert_file):
     except AttributeError:
         module.fail_json(msg="No 'Not after' date found in {0}".format(cert_file))
     except ValueError:
-        module.fail_json(msg="Faild to parse 'Not after' date of {0}".format(cert_file))
+        module.fail_json(msg="Failed to parse 'Not after' date of {0}".format(cert_file))
     now = datetime.datetime.utcnow()
     return (not_after - now).days
 
@@ -261,8 +263,8 @@ def write_file(module, dest, content):
 class ACMEDirectory(object):
     '''
     The ACME server directory. Gives access to the available resources
-    and the Replay-Nonce for a given uri. This only works for
-    uris that permit GET requests (so normally not the ones that
+    and the Replay-Nonce for a given URI. This only works for
+    URIs that permit GET requests (so normally not the ones that
     require authentication).
     https://tools.ietf.org/html/draft-ietf-acme-acme-02#section-6.2
     '''

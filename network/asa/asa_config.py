@@ -23,8 +23,8 @@ version_added: "2.2"
 author: "Peter Sprygada (@privateip), Patrick Ogenstad (@ogenstad)"
 short_description: Manage Cisco ASA configuration sections
 description:
-  - Cisco ASA configurations use a simple block indent file sytanx
-    for segementing configuration into sections.  This module provides
+  - Cisco ASA configurations use a simple block indent file syntax
+    for segmenting configuration into sections.  This module provides
     an implementation for working with ASA configuration sections in
     a deterministic way.
 extends_documentation_fragment: asa
@@ -131,18 +131,27 @@ options:
     choices: ['yes', 'no']
   config:
     description:
-      - The C(config) argument allows the playbook desginer to supply
+      - The C(config) argument allows the playbook designer to supply
         the base configuration to be used to validate configuration
         changes necessary.  If this argument is provided, the module
         will not download the running-config from the remote node.
     required: false
     default: null
-  default:
+  defaults:
     description:
       - This argument specifies whether or not to collect all defaults
         when getting the remote device running config.  When enabled,
         the module will get the current config by issuing the command
         C(show running-config all).
+    required: false
+    default: no
+    choices: ['yes', 'no']
+  passwords:
+    description:
+      - This argument specifies to include passwords in the config
+        when retrieving the running-config from the remote device.  This
+        includes passwords related to VPN endpoints.  This argument is
+        mutually exclusive with I(defaults).
     required: false
     default: no
     choices: ['yes', 'no']
@@ -190,10 +199,10 @@ vars:
     context: ansible
 
 - asa_config:
-    show_command: 'more system:running-config'
     lines:
       - ikev1 pre-shared-key MyS3cretVPNK3y
     parents: tunnel-group 1.1.1.1 ipsec-attributes
+    passwords: yes
     provider: "{{ cli }}"
 
 """
@@ -226,8 +235,13 @@ from ansible.module_utils.netcfg import NetworkConfig, dumps
 def get_config(module):
     contents = module.params['config']
     if not contents:
-        defaults = module.params['default']
-        contents = module.config.get_config(include_defaults=defaults)
+        if module.params['defaults']:
+            include = 'defaults'
+        elif module.params['passwords']:
+            include = 'passwords'
+        else:
+            include = None
+        contents = module.config.get_config(include=include)
     return NetworkConfig(indent=1, contents=contents)
 
 def get_candidate(module):
@@ -292,13 +306,14 @@ def main():
         replace=dict(default='line', choices=['line', 'block']),
 
         config=dict(),
-        default=dict(type='bool', default=False),
+        defaults=dict(type='bool', default=False),
+        passwords=dict(type='bool', default=False),
 
         backup=dict(type='bool', default=False),
         save=dict(type='bool', default=False),
     )
 
-    mutually_exclusive = [('lines', 'src')]
+    mutually_exclusive = [('lines', 'src'), ('defaults', 'passwords')]
 
     required_if = [('match', 'strict', ['lines']),
                    ('match', 'exact', ['lines']),

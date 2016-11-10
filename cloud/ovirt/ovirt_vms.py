@@ -532,8 +532,8 @@ class VmsModule(BaseModule):
                         otypes.DiskAttachment(
                             disk=otypes.Disk(
                                 id=disk_id,
-                                active=disk.get('activate', True),
                             ),
+                            active=disk.get('activate', True),
                             interface=otypes.DiskInterface(
                                 disk.get('interface', 'virtio')
                             ),
@@ -761,6 +761,7 @@ def main():
                     )
         elif state == 'stopped':
             vms_module.create(
+                result_state=otypes.VmStatus.DOWN if vm is None else None,
                 clone=module.params['clone'],
                 clone_permissions=module.params['clone_permissions'],
             )
@@ -781,6 +782,7 @@ def main():
                 )
         elif state == 'suspended':
             vms_module.create(
+                result_state=otypes.VmStatus.DOWN if vm is None else None,
                 clone=module.params['clone'],
                 clone_permissions=module.params['clone_permissions'],
             )

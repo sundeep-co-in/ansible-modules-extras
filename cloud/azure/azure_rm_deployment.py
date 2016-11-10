@@ -42,7 +42,7 @@ options:
       - In incremental mode, resources are deployed without deleting existing resources that are not included in the template. 
         In complete mode resources are deployed and existing resources in the resource group not included in the template are deleted.
     required: false
-    default: complete
+    default: incremental
     choices:
         - complete
         - incremental
@@ -190,7 +190,7 @@ EXAMPLES = '''
 
 # Create or update a template deployment based on an inline template and parameters
 - name: Create Azure Deploy
-  azure_rm_deploy:
+  azure_rm_deployment:
     state: present
     subscription_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
     resource_group_name: dev-ops-cle
@@ -405,7 +405,7 @@ class AzureRMDeploymentManager(AzureRMModuleBase):
             template_link=dict(type='str', default=None),
             parameters_link=dict(type='str', default=None),
             location=dict(type='str', default="westus"),
-            deployment_mode=dict(type='str', default='complete', choices=['complete', 'incremental']),
+            deployment_mode=dict(type='str', default='incremental', choices=['complete', 'incremental']),
             deployment_name=dict(type='str', default="ansible-arm"),
             wait_for_deployment_completion=dict(type='bool', default=True),
             wait_for_deployment_polling_period=dict(type='int', default=10)
@@ -644,7 +644,7 @@ class AzureRMDeploymentManager(AzureRMModuleBase):
         return ip_dict
 
     def _nic_to_public_ips_instance(self, nics):
-        return [self.network_client.public_ip_addresses.get(self.resource_group_name, public_ip_id.split('/')[-1])
+        return [self.network_client.public_ip_addresses.get(public_ip_id.split('/')[4], public_ip_id.split('/')[-1])
                   for nic_obj in [self.network_client.network_interfaces.get(self.resource_group_name,
                                                                              nic['dep'].resource_name) for nic in nics]
                   for public_ip_id in [ip_conf_instance.public_ip_address.id

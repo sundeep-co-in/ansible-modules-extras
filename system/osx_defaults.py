@@ -233,12 +233,12 @@ class OSXDefaults(object):
     def write(self):
 
         # We need to convert some values so the defaults commandline understands it
-        if type(self.value) is bool:
+        if isinstance(self.value, bool):
             if self.value:
                 value = "TRUE"
             else:
                 value = "FALSE"
-        elif type(self.value) is int or type(self.value) is float:
+        elif isinstance(self.value, (int, float)):
             value = str(self.value)
         elif self.array_add and self.current_value is not None:
             value = list(set(self.value) - set(self.current_value))
@@ -285,7 +285,8 @@ class OSXDefaults(object):
             return True
 
         # There is a type mismatch! Given type does not match the type in defaults
-        if self.current_value is not None and type(self.current_value) is not type(self.value):
+        value_type = type(self.value)
+        if self.current_value is not None and not isinstance(self.current_value, value_type):
             raise OSXDefaultsException("Type mismatch. Type in defaults: " + type(self.current_value).__name__)
 
         # Current value matches the given value. Nothing need to be done. Arrays need extra care

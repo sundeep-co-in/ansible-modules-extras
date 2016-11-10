@@ -395,6 +395,9 @@ try:
 except ImportError:
     pass
 
+from ansible.module_utils.basic import AnsibleModule
+
+
 class Nmcli(object):
     """
     This is the generic nmcli manipulation class that is subclassed based on platform.
@@ -490,7 +493,7 @@ class Nmcli(object):
             for setting in secrets:
                 for key in secrets[setting]:
                     config[setting_name][key]=secrets[setting][key]
-        except Exception, e:
+        except Exception as e:
             pass
 
     def dict_to_string(self, d):
@@ -501,13 +504,13 @@ class Nmcli(object):
             val=d[key]
             str_val=""
             add_string=True
-            if type(val)==type(dbus.Array([])):
+            if isinstance(val, dbus.Array):
                 for elt in val:
-                    if type(elt)==type(dbus.Byte(1)):
+                    if isinstance(elt, dbus.Byte):
                         str_val+="%s " % int(elt)
-                    elif type(elt)==type(dbus.String("")):
+                    elif isinstance(elt, dbus.String):
                         str_val+="%s" % elt
-            elif type(val)==type(dbus.Dictionary({})):
+            elif isinstance(val, dbus.Dictionary):
                 dstr+=self.dict_to_string(val)
                 add_string=False
             else:
@@ -1079,8 +1082,5 @@ def main():
         result['stderr']=err
 
     module.exit_json(**result)
-
-# import module snippets
-from ansible.module_utils.basic import *
 
 main()

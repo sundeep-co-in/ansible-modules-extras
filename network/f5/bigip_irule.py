@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
+# Copyright 2016 F5 Networks Inc.
+#
 # This file is part of Ansible
 #
 # Ansible is free software: you can redistribute it and/or modify
@@ -200,7 +202,7 @@ class BigIpiRule(object):
             )
 
         if hasattr(r, 'apiAnonymous'):
-            p['content'] = str(r.apiAnonymous)
+            p['content'] = str(r.apiAnonymous.strip())
         p['name'] = name
         return p
 
@@ -244,14 +246,10 @@ class BigIpiRule(object):
             )
 
     def present(self):
-        changed = False
-
         if self.exists():
-            changed = self.update()
+            return self.update()
         else:
-            changed = self.create()
-
-        return changed
+            return self.create()
 
     def update(self):
         params = dict()
@@ -265,6 +263,7 @@ class BigIpiRule(object):
         module = self.params['module']
 
         if content is not None:
+            content = content.strip()
             if 'content' in current:
                 if content != current['content']:
                     params['apiAnonymous'] = content
@@ -316,7 +315,7 @@ class BigIpiRule(object):
             return True
 
         if content is not None:
-            params['apiAnonymous'] = content
+            params['apiAnonymous'] = content.strip()
 
         params['name'] = name
         params['partition'] = partition

@@ -19,13 +19,6 @@
 # along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
 # import module snippets
 
-# Import Datadog
-try:
-    from datadog import initialize, api
-    HAS_DATADOG = True
-except:
-    HAS_DATADOG = False
-
 DOCUMENTATION = '''
 ---
 module: datadog_monitor
@@ -35,7 +28,6 @@ description:
 - "Options like described on http://docs.datadoghq.com/api/"
 version_added: "2.0"
 author: "Sebastian Kornehl (@skornehl)"
-notes: []
 requirements: [datadog]
 options:
     api_key:
@@ -52,7 +44,7 @@ options:
         description: ["A list of tags to associate with your monitor when creating or updating. This can help you categorize and filter monitors."]
         required: false
         default: None
-        version_added: 2.2
+        version_added: "2.2"
     type:
         description:
             - "The type of the monitor."
@@ -107,7 +99,12 @@ options:
         description: ["A boolean indicating whether changes to this monitor should be restricted to the creator or admins."]
         required: false
         default: False
-        version_added: 2.2
+        version_added: "2.2"
+    require_full_window:
+        description: ["A boolean indicating whether this monitor needs a full window of data before it's evaluated. We highly recommend you set this to False for sparse metrics, otherwise some evaluations will be skipped."]
+        required: false
+        default: null
+        version_added: "2.3"
 '''
 
 EXAMPLES = '''
@@ -144,6 +141,16 @@ datadog_monitor:
   app_key: "87ce4a24b5553d2e482ea8a8500e71b8ad4554ff"
 '''
 
+# Import Datadog
+try:
+    from datadog import initialize, api
+    HAS_DATADOG = True
+except:
+    HAS_DATADOG = False
+
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.pycompat24 import get_exception
+
 
 def main():
     module = AnsibleModule(
@@ -164,7 +171,8 @@ def main():
             notify_audit=dict(required=False, default=False, type='bool'),
             thresholds=dict(required=False, type='dict', default=None),
             tags=dict(required=False, type='list', default=None),
-            locked=dict(required=False, default=False, type='bool')
+            locked=dict(required=False, default=False, type='bool'),
+            require_full_window=dict(required=False, default=None, type='bool')
         )
     )
 
@@ -211,7 +219,8 @@ def _post_monitor(module, options):
             module.fail_json(msg=str(msg['errors']))
         else:
             module.exit_json(changed=True, msg=msg)
-    except Exception, e:
+    except Exception:
+        e = get_exception()
         module.fail_json(msg=str(e))
 
 def _equal_dicts(a, b, ignore_keys):
@@ -234,7 +243,8 @@ def _update_monitor(module, monitor, options):
             module.exit_json(changed=False, msg=msg)
         else:
             module.exit_json(changed=True, msg=msg)
-    except Exception, e:
+    except Exception:
+        e = get_exception()
         module.fail_json(msg=str(e))
 
 
@@ -248,6 +258,7 @@ def install_monitor(module):
         "escalation_message": module.params['escalation_message'],
         "notify_audit": module.boolean(module.params['notify_audit']),
         "locked": module.boolean(module.params['locked']),
+        "require_full_window" : module.params['require_full_window']
     }
 
     if module.params['type'] == "service check":
@@ -269,7 +280,8 @@ def delete_monitor(module):
     try:
         msg = api.Monitor.delete(monitor['id'])
         module.exit_json(changed=True, msg=msg)
-    except Exception, e:
+    except Exception:
+        e = get_exception()
         module.fail_json(msg=str(e))
 
 
@@ -288,7 +300,8 @@ def mute_monitor(module):
         else:
             msg = api.Monitor.mute(id=monitor['id'], silenced=module.params['silenced'])
         module.exit_json(changed=True, msg=msg)
-    except Exception, e:
+    except Exception:
+        e = get_exception()
         module.fail_json(msg=str(e))
 
 
@@ -301,10 +314,10 @@ def unmute_monitor(module):
     try:
         msg = api.Monitor.unmute(monitor['id'])
         module.exit_json(changed=True, msg=msg)
-    except Exception, e:
+    except Exception:
+        e = get_exception()
         module.fail_json(msg=str(e))
 
 
-from ansible.module_utils.basic import *
-from ansible.module_utils.urls import *
-main()
+if __name__ == '__main__':
+    main()
