@@ -25,7 +25,7 @@ description:
   - Manage Zanata projects by using Zanata REST API.
   - View project details and stats.
   - Fetch zanata.xml config for project_version.
-version_added: '2.2'
+version_added: '2.3'
 author: 'Sundeep Anand (@sundeep_co_in)'
 options:
   operation:
@@ -103,7 +103,7 @@ EXAMPLES = """
         register: project_details
 
       - name: Project translation stats
-        zanata: operation=stats url={{ server }}
+        zanata: operation=stats url={{ server }} lang=ja
                 prj={{ project }} version={{ version }}
         register: project_stats
 
@@ -227,6 +227,13 @@ def create_version(base_url, params):
 def stats(base_url, params):
     url = base_url + '/stats/proj/' + params['project_id'] + \
           '/iter/' + params['version']
+    if params.get('lang', None):
+        if ',' in params['lang']:
+            url = url + '?' + '&'.join(
+                ['locale=' + locale for locale in params['lang'].split(',')]
+            )
+        else:
+            url = url + '?locale=' + params['lang']
     return rest_call(url, method='GET')
 
 
@@ -281,6 +288,7 @@ def main():
                                           'utf8properties', 'xliff', 'xml'],
                                  default="file"),
             version     =   dict(required=False, aliases=['ver', 'iter']),
+            lang        =   dict(required=False)
         ),
         supports_check_mode=False
     )
