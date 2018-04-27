@@ -19,6 +19,10 @@
 # along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
 # import module snippets
 
+ANSIBLE_METADATA = {'status': ['preview'],
+                    'supported_by': 'community',
+                    'version': '1.0'}
+
 DOCUMENTATION = '''
 ---
 module: datadog_monitor
@@ -105,6 +109,11 @@ options:
         required: false
         default: null
         version_added: "2.3"
+    id:
+        description: ["The id of the alert. If set, will be used instead of the name to locate the alert."]
+        required: false
+        default: null
+        version_added: "2.3"
 '''
 
 EXAMPLES = '''
@@ -172,7 +181,8 @@ def main():
             thresholds=dict(required=False, type='dict', default=None),
             tags=dict(required=False, type='list', default=None),
             locked=dict(required=False, default=False, type='bool'),
-            require_full_window=dict(required=False, default=None, type='bool')
+            require_full_window=dict(required=False, default=None, type='bool'),
+            id=dict(required=False)
         )
     )
 
@@ -197,13 +207,22 @@ def main():
         unmute_monitor(module)
 
 def _fix_template_vars(message):
-    return message.replace('[[', '{{').replace(']]', '}}')
+    if message:
+        return message.replace('[[', '{{').replace(']]', '}}')
+    return message
 
 
 def _get_monitor(module):
-    for monitor in api.Monitor.get_all():
-        if monitor['name'] == module.params['name']:
-            return monitor
+    if module.params['id'] is not None:
+        monitor = api.Monitor.get(module.params['id'])
+        if 'errors' in monitor:
+            module.fail_json(msg="Failed to retrieve monitor with id %s, errors are %s" % (module.params['id'], str(monitor['errors'])))
+        return monitor
+    else:
+        monitors = api.Monitor.get_all()
+        for monitor in monitors:
+            if monitor['name'] == module.params['name']:
+                return monitor
     return {}
 
 

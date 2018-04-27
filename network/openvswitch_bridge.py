@@ -22,6 +22,10 @@
 
 # pylint: disable=C0111
 
+ANSIBLE_METADATA = {'status': ['preview'],
+                    'supported_by': 'community',
+                    'version': '1.0'}
+
 DOCUMENTATION = '''
 ---
 module: openvswitch_bridge
@@ -77,16 +81,25 @@ options:
 
 EXAMPLES = '''
 # Create a bridge named br-int
-- openvswitch_bridge: bridge=br-int state=present
+- openvswitch_bridge:
+    bridge: br-int
+    state: present
 
 # Create a fake bridge named br-int within br-parent on the VLAN 405
-- openvswitch_bridge: bridge=br-int parent=br-parent vlan=405 state=present
+- openvswitch_bridge:
+    bridge: br-int
+    parent: br-parent
+    vlan: 405
+    state: present
 
 # Create an integration bridge
-- openvswitch_bridge: bridge=br-int state=present fail_mode=secure
+- openvswitch_bridge:
+    bridge: br-int
+    state: present
+    fail_mode: secure
   args:
     external_ids:
-        bridge-id: "br-int"
+      bridge-id: br-int
 '''
 
 
@@ -299,4 +312,6 @@ def main():
 # import module snippets
 from ansible.module_utils.basic import *
 from ansible.module_utils.pycompat24 import get_exception
-main()
+
+if __name__ == '__main__':
+    main()

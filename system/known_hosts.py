@@ -18,6 +18,10 @@ You should have received a copy of the GNU General Public License
 along with this module.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+ANSIBLE_METADATA = {'status': ['preview'],
+                    'supported_by': 'community',
+                    'version': '1.0'}
+
 DOCUMENTATION = '''
 ---
 module: known_hosts
@@ -62,11 +66,11 @@ author: "Matthew Vernon (@mcv21)"
 '''
 
 EXAMPLES = '''
-# Example using with_file to set the system known_hosts file
 - name: tell the host about our servers it might want to ssh to
-  known_hosts: path='/etc/ssh/ssh_known_hosts'
-               name='foo.com.invalid'
-               key="{{ lookup('file', 'pubkeys/foo.com.invalid') }}"
+  known_hosts:
+    path: /etc/ssh/ssh_known_hosts
+    name: foo.com.invalid
+    key: "{{ lookup('file', 'pubkeys/foo.com.invalid') }}"
 '''
 
 # Makes sure public host keys are present or absent in the given known_hosts
@@ -305,4 +309,5 @@ def main():
     results = enforce_state(module,module.params)
     module.exit_json(**results)
 
-main()
+if __name__ == '__main__':
+    main()
